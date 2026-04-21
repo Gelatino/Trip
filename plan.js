@@ -308,13 +308,14 @@ function renderPlaceCard(p, hotelNight) {
   }
 
   const timeLabel = p.time ? `<span class="time-badge">${escapeHtml(p.time)}</span>` : '';
+  const cityPill = p.city ? `<span class="city-pill">${escapeHtml(p.city)}</span>` : '';
 
   let hotelRange = '';
   if (type === 'hotel' && p.day && p.endDay) {
     hotelRange = `<p class="place-subline">${prettyDateShort(p.day)} → ${prettyDateShort(p.endDay)}</p>`;
   }
 
-  const hasMeta = timeLabel || hotelBadge;
+  const hasMeta = timeLabel || hotelBadge || cityPill;
   const hasMapTarget = p.nameCn || p.nameLatin || p.address;
 
   return `
@@ -323,7 +324,7 @@ function renderPlaceCard(p, hotelNight) {
         <div class="place-type-badge ${type}" style="color: ${typeColor(type)};">${typeDef.icon}</div>
         <div class="place-names">
           <p class="place-name-latin">${escapeHtml(p.nameLatin || p.nameCn || 'Untitled')}</p>
-          ${hasMeta ? `<div class="place-meta-row">${timeLabel}${hotelBadge}</div>` : ''}
+          ${hasMeta ? `<div class="place-meta-row">${cityPill}${timeLabel}${hotelBadge}</div>` : ''}
           ${hotelRange}
         </div>
         <button class="place-check ${p.done ? 'done' : ''}" data-toggle-place="${p.id}" title="${p.done ? 'Mark not done' : 'Mark done'}"></button>

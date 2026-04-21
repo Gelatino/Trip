@@ -217,6 +217,7 @@ input::placeholder, textarea::placeholder { color: var(--muted); }
 
 .time-badge { display: inline-block; padding: 2px 8px; background: rgba(74, 145, 105, 0.15); color: var(--green); border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; }
 .night-badge { display: inline-block; padding: 2px 8px; background: rgba(224, 58, 44, 0.12); color: var(--red); border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+.city-pill { display: inline-block; padding: 2px 8px; background: rgba(232, 185, 63, 0.12); color: var(--yellow); border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
 
 /* ============ TRAIN CARD ============ */
 .train-card { border-color: rgba(74, 145, 105, 0.3); }
