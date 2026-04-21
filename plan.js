@@ -71,8 +71,11 @@ function openAmap(p, ev) {
   if (isIOS || isAndroid) {
     // Try the app scheme first. If it fails, fall back to web after a short delay.
     const appUrl = isIOS
-      ? `iosamap://poi?sourceApplication=trip&keywords=${encodeURIComponent(query)}&dev=0`
+      // iOS uses "name" instead of "keywords"
+      ? `iosamap://poi?sourceApplication=trip&name=${encodeURIComponent(query)}&dev=0`
+      // Android uses "keywords"
       : `androidamap://poi?sourceApplication=trip&keywords=${encodeURIComponent(query)}&dev=0`;
+      
     const webUrl = `https://uri.amap.com/search?keywords=${encodeURIComponent(query)}${city ? '&city=' + encodeURIComponent(city) : ''}`;
 
     // Set a timer: if the user is still on the page after 1.5s, the app didn't open
