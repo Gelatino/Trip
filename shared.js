@@ -160,9 +160,22 @@ async function apiPost(action, payload) {
 // ============ UTILS ============
 function formatDate(d) {
   if (!d) return '';
+  
+  // If it's already a YYYY-MM-DD string, just return it
+  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}/.test(d)) {
+    return d.slice(0, 10);
+  }
+
   const dt = new Date(d);
   if (isNaN(dt)) return '';
-  return dt.toISOString().slice(0, 10);
+
+  // Instead of toISOString (which is UTC), 
+  // extract the local components manually to prevent shifting
+  const year = dt.getFullYear();
+  const month = String(dt.getMonth() + 1).padStart(2, '0');
+  const day = String(dt.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
 }
 
 function showToast(msg, isError) {
