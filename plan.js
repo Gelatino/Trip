@@ -139,7 +139,7 @@ function expandPlacesToDays(places) {
       const end = new Date(p.endDay);
       let cursor = new Date(start);
       while (cursor < end) {
-        const dayStr = cursor.toISOString().slice(0, 10);
+        const dayStr = formatDate(cursor);
         const isStart = dayStr === p.day;
         slots.push({ day: dayStr, place: p, hotelNight: isStart ? 'start' : 'middle' });
         cursor.setDate(cursor.getDate() + 1);
