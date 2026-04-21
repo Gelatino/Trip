@@ -58,7 +58,6 @@ function updateIdentityChip() {
 
 // ============ HEADER + DRAWER ============
 function renderHeader({ title, subtitle, page }) {
-  // Inject header into body
   const header = document.querySelector('.header');
   if (!header) return;
   header.innerHTML = `
@@ -174,6 +173,10 @@ function showToast(msg, isError) {
   setTimeout(() => t.className = 'toast' + (isError ? ' error' : ''), 2200);
 }
 
+function haptic() {
+  try { if (navigator.vibrate) navigator.vibrate(10); } catch(e) {}
+}
+
 function escapeHtml(s) {
   if (s === null || s === undefined) return '';
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -191,6 +194,13 @@ function prettyDateLong(iso) {
   const d = new Date(iso);
   if (isNaN(d)) return iso;
   return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+function prettyDateShort(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 async function copyToClipboard(text, btn) {
@@ -212,6 +222,7 @@ async function copyToClipboard(text, btn) {
       btn.classList.add('copied');
       setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
     }
+    haptic();
   } catch (e) {
     showToast('Copy failed', true);
   }
