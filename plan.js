@@ -47,13 +47,58 @@ function normalizeTime(t) {
   return s;
 }
 
-// Amap URL: use only Chinese name + city for a clean search
+// Amap URL: use app deep link on iOS/Android, web on desktop
 function amapUrl(p) {
   const query = p.nameCn || p.nameLatin || '';
   const city = p.city || '';
   const keywords = encodeURIComponent(query);
   const cityParam = city ? '&city=' + encodeURIComponent(city) : '';
-  return `https://uri.amap.com/search?keywords=${keywords}${cityParam}`;
+
+  // uri.amap.com works across platforms - it handles app detection server-side
+  // but on iOS Safari, app handoff is unreliable. We bake in the intent explicitly.
+  return `https://uri.amap.com/search?keywords=${keywords}${cityParam}&src=webapp&coordinate=gaode&callnative=1`;
+}
+
+// Open Amap with app-first behavior on mobile
+function openAmap(p, ev) {
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  const query = p.nameCn || p.nameLatin || '';
+  const city = p.city || '';
+  const ua = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/.test(ua);
+  const isAndroid = /Android/.test(ua);
+
+  if (isIOS || isAndroid) {
+    // Try the app scheme first. If it fails, fall back to web after a short delay.
+    const appUrl = isIOS
+      ? `iosamap://poi?sourceApplication=trip&keywords=${encodeURIComponent(query)}&dev=0`
+      : `androidamap://poi?sourceApplication=trip&keywords=${encodeURIComponent(query)}&dev=0`;
+    const webUrl = `https://uri.amap.com/search?keywords=${encodeURIComponent(query)}${city ? '&city=' + encodeURIComponent(city) : ''}`;
+
+    // Set a timer: if the user is still on the page after 1.5s, the app didn't open
+    const start = Date.now();
+    const timer = setTimeout(() => {
+      if (Date.now() - start < 2000 && !document.hidden) {
+        window.location.href = webUrl;
+      }
+    }, 1500);
+
+    // Attempt the app launch
+    window.location.href = appUrl;
+
+    // If the page becomes hidden, the app opened. Clear the fallback.
+    const onHidden = () => {
+      if (document.hidden) {
+        clearTimeout(timer);
+        document.removeEventListener('visibilitychange', onHidden);
+      }
+    };
+    document.addEventListener('visibilitychange', onHidden);
+  } else {
+    // Desktop: just open the web version in a new tab
+    const webUrl = `https://uri.amap.com/search?keywords=${encodeURIComponent(query)}${city ? '&city=' + encodeURIComponent(city) : ''}`;
+    window.open(webUrl, '_blank', 'noopener');
+  }
 }
 
 async function refresh() {
@@ -348,7 +393,7 @@ function renderPlaceCard(p, hotelNight) {
       ${p.note ? `<p class="place-note">${escapeHtml(p.note)}</p>` : ''}
 
       <div class="place-actions">
-        ${hasMapTarget ? `<a class="place-map-btn" href="${amapUrl(p)}" target="_blank" rel="noopener">Amap ↗</a>` : ''}
+        ${hasMapTarget ? `<button class="place-map-btn" data-amap="${p.id}">Amap ↗</button>` : ''}
         <button class="place-edit-btn" data-edit-place="${p.id}">Edit</button>
         <button class="place-del-btn" data-del-place="${p.id}">Delete</button>
       </div>
@@ -607,6 +652,12 @@ function attachHandlers() {
   });
   document.querySelectorAll('[data-copy]').forEach(btn => {
     btn.onclick = () => copyToClipboard(btn.dataset.copy, btn);
+  });
+  document.querySelectorAll('[data-amap]').forEach(btn => {
+    btn.onclick = (ev) => {
+      const place = state.places.find(p => p.id === btn.dataset.amap);
+      if (place) openAmap(place, ev);
+    };
   });
 
   const addPlaceBtn = document.getElementById('add-place-btn');
