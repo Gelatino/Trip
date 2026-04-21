@@ -62,23 +62,28 @@ function amapUrl(p) {
 // Open Amap with app-first behavior on mobile
 function openAmap(p, ev) {
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
-  const query = p.nameCn || p.nameLatin || '';
+
+  // IMPROVEMENT: Combine City + Address + Name for a "Deep Search"
+  // This tells AMap exactly where to look.
+  const name = p.nameCn || p.nameLatin || '';
   const city = p.city || '';
+  const address = p.address || '';
+  
+  // Create a specific search string: "Shanghai No.1066 Yan'an West Road Ji Hotel"
+  const fullQuery = `${city} ${address} ${name}`.trim();
+  
   const ua = navigator.userAgent;
   const isIOS = /iPhone|iPad|iPod/.test(ua);
   const isAndroid = /Android/.test(ua);
 
   if (isIOS || isAndroid) {
-    // Try the app scheme first. If it fails, fall back to web after a short delay.
     const appUrl = isIOS
-      // iOS uses "name" instead of "keywords"
-      ? `iosamap://poi?sourceApplication=trip&name=${encodeURIComponent(query)}&dev=0`
-      // Android uses "keywords"
-      : `androidamap://poi?sourceApplication=trip&keywords=${encodeURIComponent(query)}&dev=0`;
-      
-    const webUrl = `https://uri.amap.com/search?keywords=${encodeURIComponent(query)}${city ? '&city=' + encodeURIComponent(city) : ''}`;
+      ? `iosamap://poi?sourceApplication=trip&name=${encodeURIComponent(fullQuery)}&dev=0`
+      : `androidamap://poi?sourceApplication=trip&keywords=${encodeURIComponent(fullQuery)}&dev=0`;
+    
+    // Web fallback also uses the more specific query
+    const webUrl = `https://uri.amap.com/search?keywords=${encodeURIComponent(fullQuery)}`;
 
-    // Set a timer: if the user is still on the page after 1.5s, the app didn't open
     const start = Date.now();
     const timer = setTimeout(() => {
       if (Date.now() - start < 2000 && !document.hidden) {
@@ -86,10 +91,8 @@ function openAmap(p, ev) {
       }
     }, 1500);
 
-    // Attempt the app launch
     window.location.href = appUrl;
 
-    // If the page becomes hidden, the app opened. Clear the fallback.
     const onHidden = () => {
       if (document.hidden) {
         clearTimeout(timer);
@@ -98,8 +101,7 @@ function openAmap(p, ev) {
     };
     document.addEventListener('visibilitychange', onHidden);
   } else {
-    // Desktop: just open the web version in a new tab
-    const webUrl = `https://uri.amap.com/search?keywords=${encodeURIComponent(query)}${city ? '&city=' + encodeURIComponent(city) : ''}`;
+    const webUrl = `https://uri.amap.com/search?keywords=${encodeURIComponent(fullQuery)}`;
     window.open(webUrl, '_blank', 'noopener');
   }
 }
