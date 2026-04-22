@@ -106,23 +106,37 @@ function openAmap(p, ev) {
   }
 }
 
+function normalizePlaces(data) {
+  return (data.places || []).map(p => ({
+    ...p,
+    day: p.day ? (typeof p.day === 'string' ? p.day.slice(0,10) : formatDate(p.day)) : '',
+    endDay: p.endDay ? (typeof p.endDay === 'string' ? p.endDay.slice(0,10) : formatDate(p.endDay)) : '',
+    time: normalizeTime(p.time),
+    city: p.city || '',
+    done: p.done === true || p.done === 'TRUE' || p.done === 'true'
+  }));
+}
+
 async function refresh() {
+  const cached = getCachedPlaces();
+  if (cached) {
+    state.places = normalizePlaces(cached);
+    state.loading = false;
+    render();
+  }
+
+  showSyncing(true);
   try {
-    const data = await apiGet();
-    state.places = (data.places || []).map(p => ({
-      ...p,
-      day: p.day ? (typeof p.day === 'string' ? p.day.slice(0,10) : formatDate(p.day)) : '',
-      endDay: p.endDay ? (typeof p.endDay === 'string' ? p.endDay.slice(0,10) : formatDate(p.endDay)) : '',
-      time: normalizeTime(p.time),
-      city: p.city || '',
-      done: p.done === true || p.done === 'TRUE' || p.done === 'true'
-    }));
+    const data = await apiGetPlaces();
+    state.places = normalizePlaces(data);
     state.loading = false;
     render();
   } catch (e) {
-    showToast('Could not load', true);
+    if (!cached) showToast('Could not load', true);
     state.loading = false;
     render();
+  } finally {
+    showSyncing(false);
   }
 }
 

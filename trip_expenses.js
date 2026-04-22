@@ -16,25 +16,50 @@ function onIdentityChange(who) {
   state.form.who = who;
   render();
 }
+function normalizeExpensesData(data) {
+  return {
+    rate: data.rate || 8.03,
+    expenses: (data.expenses || []).map(e => ({
+      ...e,
+      amount: parseFloat(e.amount),
+      date: typeof e.date === 'string' ? e.date.slice(0,10) : formatDate(e.date)
+    })),
+    settlements: (data.settlements || []).map(s => ({
+      ...s,
+      amount: parseFloat(s.amount),
+      date: typeof s.date === 'string' ? s.date.slice(0,10) : formatDate(s.date)
+    }))
+  };
+}
 
 async function refresh() {
+  // 1. Show cached data instantly
+  const cached = getCachedExpenses();
+  if (cached) {
+    const norm = normalizeExpensesData(cached);
+    state.rate = norm.rate;
+    state.expenses = norm.expenses;
+    state.settlements = norm.settlements;
+    state.loading = false;
+    render();
+  }
+
+  // 2. Fetch fresh in background
+  showSyncing(true);
   try {
-    const data = await apiGet();
-    state.rate = data.rate || 8.03;
-    state.expenses = (data.expenses || []).map(e => ({
-      ...e, amount: parseFloat(e.amount),
-      date: typeof e.date === 'string' ? e.date.slice(0,10) : formatDate(e.date)
-    }));
-    state.settlements = (data.settlements || []).map(s => ({
-      ...s, amount: parseFloat(s.amount),
-      date: typeof s.date === 'string' ? s.date.slice(0,10) : formatDate(s.date)
-    }));
+    const data = await apiGetExpenses();
+    const norm = normalizeExpensesData(data);
+    state.rate = norm.rate;
+    state.expenses = norm.expenses;
+    state.settlements = norm.settlements;
     state.loading = false;
     render();
   } catch (e) {
-    showToast('Could not load', true);
+    if (!cached) showToast('Could not load', true);
     state.loading = false;
     render();
+  } finally {
+    showSyncing(false);
   }
 }
 

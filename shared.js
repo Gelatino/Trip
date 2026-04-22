@@ -71,7 +71,10 @@ function renderHeader({ title, subtitle, page }) {
       </a>
       <div class="title-block">
         <h1 class="title">${title}</h1>
-        <p class="sub" id="page-sub">${subtitle || ''}</p>
+        <p class="sub" id="page-sub">
+          ${subtitle || ''}
+          <span id="sync-indicator" class="sync-indicator">syncing…</span>
+        </p>
       </div>
       <button class="identity-chip" id="identity-chip" title="Change identity">?</button>
       <button class="burger-btn" id="burger-btn" aria-label="Menu">
@@ -143,10 +146,43 @@ function openDrawer(currentPage) {
 }
 
 // ============ API ============
-async function apiGet() {
-  const res = await fetch(API_URL + '?action=getAll');
-  return res.json();
+
+const CACHE_KEY_EXPENSES = 'trip:cache:expenses';
+const CACHE_KEY_PLACES = 'trip:cache:places';
+
+async function apiGetExpenses() {
+  const res = await fetch(API_URL + '?action=getExpenses');
+  const data = await res.json();
+  try { localStorage.setItem(CACHE_KEY_EXPENSES, JSON.stringify(data)); } catch(e) {}
+  return data;
 }
+
+async function apiGetPlaces() {
+  const res = await fetch(API_URL + '?action=getPlaces');
+  const data = await res.json();
+  try { localStorage.setItem(CACHE_KEY_PLACES, JSON.stringify(data)); } catch(e) {}
+  return data;
+}
+
+function getCachedExpenses() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY_EXPENSES);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function getCachedPlaces() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY_PLACES);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function showSyncing(on) {
+  const el = document.getElementById('sync-indicator');
+  if (el) el.classList.toggle('visible', on);
+}
+
 
 async function apiPost(action, payload) {
   const res = await fetch(API_URL, {
